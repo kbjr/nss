@@ -15,8 +15,10 @@ var PID_FILE = __dirname + '/.pid';
 // Load config
 var conf = require('./config.json');
 
+// Load the controller
+var controller = require('./controller');
+
 // Store the PID
-console.log(PID_FILE, process.pid);
 fs.writeFileSync(PID_FILE, process.pid);
 
 // Build the server
@@ -32,6 +34,12 @@ var server = http.createServer(function(req, res) {
 	var pathname = FILEPATH + (
 		(urlData.pathname === '/') ? '/index.ejs' : urlData.pathname
 	).split('/').map(removeDoubleDot).join('/');
+	
+	// See if there is an entry in the controller file
+	var route = (urlData.pathname === '/') ? 'index' : urlData.pathname.substring(1);
+	if (controller.hasOwnProperty(route)) {
+		return controller[route](req, res);
+	}
 	
 	// Test for an ejs extension
 	var isEJS = (pathname.split('.').pop() === 'ejs');
@@ -99,7 +107,7 @@ var server = http.createServer(function(req, res) {
 
 // Start the server
 server.listen(conf.port, conf.host, function() {
-	console.log('Server running at ' + conf.host + ':' + conf.port);
+	console.log('Server running at ' + conf.host + ':' + conf.port + ' (process id ' + process.pid + ')');
 });
 
 // Sends a response

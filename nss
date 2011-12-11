@@ -2,108 +2,117 @@
 
 import sys, os, json, argparse, signal, subprocess, shutil
 
-NSS_PATH = sys.path[0]
-SERVER_DIR = '.nss'
-ACCESS_LOG_FILE = 'logs/access.log'
-ERROR_LOG_FILE = 'logs/error.log'
-CONTROLLER_FILE = 'controller.js'
-PID_FILE = '.pid'
+# Constants
+NSS_PATH         = sys.path[0]
+SERVER_DIR       = '.nss'
+LOG_DIR          = 'logs'
+ACCESS_LOG_FILE  = 'access.log'
+ERROR_LOG_FILE   = 'error.log'
+CONTROLLER_FILE  = 'controller.js'
+PID_FILE         = '.pid'
+SERVER_TEMPLATE  = '.nss-server-template'
 
 # ------------------------------------------------------------
 #  Main function
 
 def main():
-	# If no arguments are given, display the list of sub-commands
-	if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
-		print('nss - Node.js Simple Server')
-		print('Copyright 2011 James Brumond')
-		print('Dual licensed under MIT and GPL\n')
-		print('These are the available sub-commands:')
-		print('  init           - create a new http server in the current directory')
-		print('  destroy        - destroy the http server in the current directory')
-		print('  start          - start the http server')
-		print('  stop           - stop the http server')
-		print('  restart        - restart the http server')
-		print('  edit           - edit the http server\'s controller')
-		print('  config         - edit the http server\'s configuration')
-		print('  global-config  - edit the default configuration')
-	# Otherwise, create the argument parser
+		
+	# -------------------------------------------------------------------------
+	#  Argument parsing configuration
+	
+	parser = argparse.ArgumentParser(
+		description = 'Creates (mostly) static Node.js http servers automatically'
+	)
+	sub_parsers = parser.add_subparsers()
+	
+	# We use the --deepest flag on a lot of commands, so store the help up here
+	deepest_flag_help = 'If multiple servers are found in the current tree, always reference the deepest one'
+	
+	# nss init
+	init_parser = sub_parsers.add_parser('init', help='Initialze a new nss server in the current directory')
+	init_parser.add_argument('-c', '--with-controller', action='store', default=None,
+		help='Link to the given filepath for the controller (instead of creating a new one')
+	
+	# nss destroy [-b]
+	destroy_parser = sub_parsers.add_parser('destroy', help='Destroy an nss server in the current tree')
+	destroy_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	
+	# nss start [-b]
+	start_parser = sub_parsers.add_parser('start', help='Start an nss server in the current tree')
+	start_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	
+	# nss stop [-b]
+	stop_parser = sub_parsers.add_parser('stop', help='Stop an nss server in the current tree')
+	stop_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	
+	# nss restart [-b]
+	restart_parser = sub_parsers.add_parser('restart', help='Restart an nss server in the current tree')
+	restart_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	
+	# nss edit [--editor EDITOR] [-b]
+	edit_parser = sub_parsers.add_parser('edit', help='Edit an nss controller in the current tree')
+	edit_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	edit_parser.add_argument('-e', '--editor', action='store', default=None,
+		help='Choose what editor to use to edit the config file')
+	
+	# nss config [-b] KEY VALUE
+	config_parser = sub_parsers.add_parser('config', help='Configure an nss server in the current tree')
+	config_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	config_parser.add_argument('key', action='store',
+		help='The configuration setting to change')
+	config_parser.add_argument('value', action='store',
+		help='The new value to set in the configuration')
+		
+	# nss global-config KEY VALUE
+	gconfig_parser = sub_parsers.add_parser('global-config', help='Change global nss configuration settings')
+	gconfig_parser.add_argument('key', action='store',
+		help='The configuration setting to change')
+	gconfig_parser.add_argument('value', action='store',
+		help='The new value to set in the configuration')
+	
+	# nss logs {access|error}
+	logs_parser = sub_parsers.add_parser('logs', help='Display logs for an nss server in the current tree')
+	logs_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	logs_parser.add_argument('log_file', action='store', choices=['access', 'error'],
+		help='Which log file to view ("access" or "error")')
+	logs_parser.add_argument('-l', '--lines', type=int, action='store', default=25,
+		help='How many lines should be displayed from the end of the log (default: 25, 0 for all)')
+	
+	# nss npm ...
+	npm_parser = sub_parsers.add_parser('npm', help='Run npm commands on an nss server in the current tree')
+	npm_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
+	npm_parser.add_argument('npm_args', action='store', nargs='+',
+		help='Arguments to be passed to npm')
+	
+	# Parse the arguments
+	args = parser.parse_args()
+	
+	# -------------------------------------------------------------------------
+	#  Select the correct function
+	
+	subcommand = sys.argv[1]
+	if subcommand == 'init':
+		init(args)
+	elif subcommand == 'destroy':
+		destroy(args)
+	elif subcommand == 'start':
+		start(args)
+	elif subcommand == 'stop':
+		stop(args)
+	elif subcommand == 'restart':
+		restart(args)
+	elif subcommand == 'edit':
+		edit(args)
+	elif subcommand == 'config':
+		config(args)
+	elif subcommand == 'global-config':
+		global_config(args)
+	elif subcommand == 'logs':
+		logs(args)
+	elif subcommand == 'npm':
+		npm(args)
 	else:
-		
-		# -------------------------------------------------------------------------
-		#  Argument parsing configuration
-		
-		parser = argparse.ArgumentParser()
-		sub_parsers = parser.add_subparsers()
-		
-		# We use the --deepest flag on a lot of commands, so store the help up here
-		deepest_flag_help = 'If multiple servers are found in the current tree, always reference the deepest one'
-		
-		# nss init
-		init_parser = sub_parsers.add_parser('init')
-		
-		# nss destroy [-b]
-		destroy_parser = sub_parsers.add_parser('destroy')
-		destroy_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
-		
-		# nss start [-b]
-		start_parser = sub_parsers.add_parser('start')
-		start_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
-		
-		# nss stop [-b]
-		stop_parser = sub_parsers.add_parser('stop')
-		stop_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
-		
-		# nss restart [-b]
-		restart_parser = sub_parsers.add_parser('restart')
-		restart_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
-		
-		# nss edit [--editor EDITOR] [-b]
-		edit_parser = sub_parsers.add_parser('edit')
-		edit_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
-		edit_parser.add_argument('-e', '--editor', action='store', default=None,
-			help='Choose what editor to use to edit the config file')
-		
-		# nss config [-b] KEY VALUE
-		config_parser = sub_parsers.add_parser('config')
-		config_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
-		config_parser.add_argument('key', action='store',
-			help='The configuration setting to change')
-		config_parser.add_argument('value', action='store',
-			help='The new value to set in the configuration')
-			
-		# nss global-config KEY VALUE
-		gconfig_parser = sub_parsers.add_parser('global-config')
-		gconfig_parser.add_argument('key', action='store',
-			help='The configuration setting to change')
-		gconfig_parser.add_argument('value', action='store',
-			help='The new value to set in the configuration')
-		
-		# Parse the arguments
-		args = parser.parse_args()
-		
-		# -------------------------------------------------------------------------
-		#  Select the correct function
-		
-		subcommand = sys.argv[1]
-		if subcommand == 'init':
-			init(args)
-		elif subcommand == 'destroy':
-			destroy(args)
-		elif subcommand == 'start':
-			start(args)
-		elif subcommand == 'stop':
-			stop(args)
-		elif subcommand == 'restart':
-			restart(args)
-		elif subcommand == 'edit':
-			edit(args)
-		elif subcommand == 'config':
-			config(args)
-		elif subcommand == 'global-config':
-			global_config(args)
-		else:
-			sys.stderr.write('Invalid argument')
+		sys.stderr.write('Invalid argument')
 
 # ------------------------------------------------------------
 #  These functions represent the sub-commands
@@ -120,9 +129,17 @@ def init(args):
 	if doInit:
 		print('Initializing new server...')
 		shutil.copytree(
-			os.path.join(NSS_PATH, '.nss-server-template'),
+			os.path.join(NSS_PATH, SERVER_TEMPLATE),
 			os.path.join(os.getcwd(), SERVER_DIR)
 		)
+		if args.with_controller:
+			controller = os.path.join(
+				_find_up_tree(default=True, errorOnNotFound=False), 'controller.js'
+			)
+			os.unlink(controller)
+			os.symlink(
+				os.path.abspath(args.with_controller), controller
+			)
 
 def destroy(args):
 	"""
@@ -130,6 +147,7 @@ def destroy(args):
 	"""
 	serverPath = _find_up_tree(default=args.deepest)
 	print('Destroying server...')
+	stop(args)
 	shutil.rmtree(serverPath)
 
 def start(args):
@@ -148,8 +166,8 @@ def start(args):
 				pid = None
 		if pid:
 			_error('Server is already running. (did you mean nss restart?)')
-	with open(os.path.join(serverPath, ACCESS_LOG_FILE), 'a') as f_access_log:
-		with open(os.path.join(serverPath, ERROR_LOG_FILE), 'a') as f_error_log:
+	with open(os.path.join(serverPath, LOG_DIR, ACCESS_LOG_FILE), 'a') as f_access_log:
+		with open(os.path.join(serverPath, LOG_DIR, ERROR_LOG_FILE), 'a') as f_error_log:
 			subprocess.Popen([os.path.join(serverPath, 'server.js')], stdout=f_access_log, stderr=f_error_log)
 
 def stop(args):
@@ -205,6 +223,32 @@ def global_config(args):
 	"""
 	configFile = os.path.join(NSS_PATH, '.nss-server-template/config.json')
 	_edit_json_file(configFile, args.key, args.value)
+
+def logs(args):
+	"""
+	  Used for `nss logs {"access"|"error"}'
+	"""
+	serverPath = _find_up_tree(default=args.deepest)
+	logFile = os.path.join(serverPath, LOG_DIR)
+	if args.log_file == 'access':
+		logFile = os.path.join(logFile, ACCESS_LOG_FILE)
+	elif args.log_file == 'error':
+		logFile = os.path.join(logFile, ERROR_LOG_FILE)
+	with open(logFile, 'r') as f:
+		f.seek(0, 2)
+		fsize = f.tell()
+		f.seek(max(fsize - 1024, 0), 0)
+		lines = f.readlines()
+	lines = ''.join(lines[-args.lines:])
+	print(lines, end='')
+
+def npm(args):
+	"""
+	  Used for `nss npm ...'
+	"""
+	argv = sys.argv[1:]
+	argv.insert(0, '/usr/bin/env')
+	subprocess.Popen(argv, cwd=_find_up_tree(default=args.deepest)).wait()
 
 # ------------------------------------------------------------
 #  Internal functions
@@ -266,7 +310,7 @@ def _load_global_config(key=None, default=None):
 	  Reads the global config file
 	"""
 	content = None
-	filepath = os.path.join(NSS_PATH, '.nss-server-template/config.json')
+	filepath = os.path.join(NSS_PATH, SERVER_TEMPLATE, 'config.json')
 	with open(filepath, 'r') as f:
 		content = json.load(f)
 	if key:

@@ -22,4 +22,6 @@ uninstall:
 	test -d "/etc/bash_completion.d" && \
 		rm -f "/etc/bash_completion.d/nss"
 
+reinstall: uninstall install
+
 # End of file Makefile
