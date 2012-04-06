@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>nss by kbjr</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>nss</h1>
+        <p>A CLI utility for easily creating a (mostly) static node.js server on the fly</p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/kbjr/nss" class="button fork"><strong>Fork On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/kbjr/nss/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/kbjr/nss/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h2>Installation</h2>
+
+<p>To install nss, first you must download the source code (or clone), and then run <code>make install</code>.</p>
+
+<div class="highlight">
+<pre><span class="nv">$ </span>git clone git://github.com/kbjr/nss.git
+<span class="nv">$ </span><span class="nb">cd </span>nss
+<span class="nv">$ </span><span class="o">[</span>sudo<span class="o">]</span> make install
+</pre>
+</div>
+
+
+<p>After installing, you will have a command <code>nss</code> that you can use to create your servers.</p>
+
+<h2>Usage</h2>
+
+<p>First, you create a new server which will have a document root of the current working directory.</p>
+
+<div class="highlight">
+<pre><span class="nv">$ </span>nss init
+</pre>
+</div>
+
+
+<p>You can then start the server and stop it again when you're done with it.</p>
+
+<div class="highlight">
+<pre><span class="nv">$ </span>nss start
+<span class="nv">$ </span>nss stop
+</pre>
+</div>
+
+
+<p>Once the server is running, you can request your files at <code><a href="http://127.0.0.1:1337/">http://127.0.0.1:1337/</a></code>. You can change the port number if you want, as well.</p>
+
+<div class="highlight">
+<pre><span class="nv">$ </span>nss config port 1234
+<span class="nv">$ </span>nss restart
+</pre>
+</div>
+
+
+<h2>Some more advanced features</h2>
+
+<p>So, for the most part, this is just a static file server, but it has a few extra tricks in case you want a little more. For example, you can create a file with the extension <code>.ejs</code> and that file will be parsed with <a href="http://embeddedjs.com/">EJS</a> templating. You can also do a little bit of more dynamic handling if you really want to using the controller editor.</p>
+
+<div class="highlight">
+<pre><span class="nv">$ </span>nss edit
+</pre>
+</div>
+
+
+<p>This will open up an editor with a very simple file that looks like this:</p>
+
+<div class="highlight">
+<pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">{</span>
+
+<span class="c1">//  test: function(req, res) {</span>
+<span class="c1">//      res.writeHead(200, {'content-type': 'text/plain'});</span>
+<span class="c1">//      res.write('Hello, World!');</span>
+<span class="c1">//      res.end();</span>
+<span class="c1">//  }</span>
+
+<span class="p">};</span>
+</pre>
+</div>
+
+
+<p>By adding functions to this object, you can add handling for specific routes. For example, if you uncommented the <code>test</code> function above (and restart the server), the server would respond to the route <code>/test</code> by outputting "Hello, World!". You can also specify what editor you want to use to edit the controller file by supplying an <code>--editor</code> option.</p>
+
+<div class="highlight">
+<pre><span class="nv">$ </span>nss edit --editor<span class="o">=</span>vi
+</pre>
+</div>
+
+
+<h2>Cleaning up</h2>
+
+<p>When you are done with a server, you can get rid of it using <code>nss destroy</code>.</p>
+
+<div class="highlight">
+<pre><span class="nv">$ </span>nss destroy
+</pre>
+</div>
+
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/kbjr">kbjr</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+  </body>
+</html>
