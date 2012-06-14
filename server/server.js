@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 // Load modules
-var fs = require('fs');
-var url = require('url');
-var ejs = require('ejs');
-var http = require('http');
-var path = require('path');
-var mime = require('mime');
+var fs     = require('fs');
+var url    = require('url');
+var ejs    = require('ejs');
+var path   = require('path');
+var mime   = require('mime');
+var http   = require('http');
+var https  = require('https');
 
 // The root file path
 var FILEPATH = path.dirname(__dirname);
@@ -22,7 +23,26 @@ var controller = require('./controller');
 fs.writeFileSync(PID_FILE, process.pid);
 
 // Build the server
-var server = http.createServer(function(req, res) {
+var server;
+if (conf.https) {
+	conf.https.opts = {
+		key: fs.readFileSync(path.join(__dirname, conf.https.keyFile)),
+		cert: fs.readFileSync(path.join(__dirname, conf.https.certFile))
+	};
+	server = https.createServer(conf.https.opts, serverFunc);
+} else {
+	server = http.createServer(serverFunc);
+}
+
+// Start the server
+server.listen(conf.port, conf.host, function() {
+	console.log('Server running at ' + conf.host + ':' + conf.port + ' (process id ' + process.pid + ')');
+});
+
+// ------------------------------------------------------------------
+//  Internals
+
+function serverFunc(req, res) {
 	
 	// Parse the request url
 	var urlData = url.parse(req.url);
@@ -103,12 +123,7 @@ var server = http.createServer(function(req, res) {
 		
 	});
 	
-});
-
-// Start the server
-server.listen(conf.port, conf.host, function() {
-	console.log('Server running at ' + conf.host + ':' + conf.port + ' (process id ' + process.pid + ')');
-});
+}
 
 // Sends a response
 function respond(res, conf) {

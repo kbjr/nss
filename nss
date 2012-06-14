@@ -33,29 +33,29 @@ def main():
 	init_parser.add_argument('-c', '--with-controller', action='store', default=None,
 		help='Link to the given filepath for the controller (instead of creating a new one')
 	
-	# nss destroy [-b]
+	# nss destroy
 	destroy_parser = sub_parsers.add_parser('destroy', help='Destroy an nss server in the current tree')
 	destroy_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
 	
-	# nss start [-b]
+	# nss start
 	start_parser = sub_parsers.add_parser('start', help='Start an nss server in the current tree')
 	start_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
 	
-	# nss stop [-b]
+	# nss stop
 	stop_parser = sub_parsers.add_parser('stop', help='Stop an nss server in the current tree')
 	stop_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
 	
-	# nss restart [-b]
+	# nss restart
 	restart_parser = sub_parsers.add_parser('restart', help='Restart an nss server in the current tree')
 	restart_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
 	
-	# nss edit [--editor EDITOR] [-b]
+	# nss edit [--editor EDITOR]
 	edit_parser = sub_parsers.add_parser('edit', help='Edit an nss controller in the current tree')
 	edit_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
 	edit_parser.add_argument('-e', '--editor', action='store', default=None,
 		help='Choose what editor to use to edit the config file')
 	
-	# nss config [-b] KEY VALUE
+	# nss config KEY VALUE
 	config_parser = sub_parsers.add_parser('config', help='Configure an nss server in the current tree')
 	config_parser.add_argument('-d', '--deepest', action='store_true', help=deepest_flag_help)
 	config_parser.add_argument('key', action='store',
@@ -276,7 +276,7 @@ def _find_up_tree(default=False, errorOnNotFound=True):
 			_error('Not an nss server (or any of the parent directories)')
 		else:
 			return None
-	# If more than one was found and no --use-bottom flag was found, ask which to use
+	# If more than one was found and no --deepest flag was found, ask which to use
 	if len(found) > 1 and not default:
 		print('More than one nss server was found in your current tree.')
 		for i in range(len(found)):
