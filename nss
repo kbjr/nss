@@ -300,7 +300,12 @@ def _edit_json_file(filepath, key, value):
 	content = None
 	with open(filepath, 'r') as f:
 		content = json.load(f)
-	content[key] = value
+	key = key.split('.')
+	obj = content
+	last = len(key) - 1
+	for i in range(last):
+		obj = obj[key[i]]
+	content[key[last]] = value
 	content = json.dumps(content, indent=4)
 	with open(filepath, 'w') as f:
 		f.write(content)
