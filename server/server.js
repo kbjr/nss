@@ -24,7 +24,7 @@ fs.writeFileSync(PID_FILE, process.pid);
 
 // Build the server
 var server;
-if (conf.https) {
+if (conf.https && conf.https.keyFile && conf.https.certFile) {
 	conf.https.opts = {
 		key: fs.readFileSync(path.join(__dirname, conf.https.keyFile)),
 		cert: fs.readFileSync(path.join(__dirname, conf.https.certFile))
