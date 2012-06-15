@@ -7,7 +7,6 @@ var ejs    = require('ejs');
 var path   = require('path');
 var mime   = require('mime');
 var http   = require('http');
-var https  = require('https');
 
 // The root file path
 var FILEPATH = path.dirname(__dirname);
@@ -23,26 +22,7 @@ var controller = require('./controller');
 fs.writeFileSync(PID_FILE, process.pid);
 
 // Build the server
-var server;
-if (conf.https && conf.https.keyFile && conf.https.certFile) {
-	conf.https.opts = {
-		key: fs.readFileSync(path.resolve(__dirname, conf.https.keyFile)),
-		cert: fs.readFileSync(path.resolve(__dirname, conf.https.certFile))
-	};
-	server = https.createServer(conf.https.opts, serverFunc);
-} else {
-	server = http.createServer(serverFunc);
-}
-
-// Start the server
-server.listen(conf.port, conf.host, function() {
-	console.log('Server running at ' + conf.host + ':' + conf.port + ' (process id ' + process.pid + ')');
-});
-
-// ------------------------------------------------------------------
-//  Internals
-
-function serverFunc(req, res) {
+var server = http.createServer(function(req, res) {
 	
 	// Parse the request url
 	var urlData = url.parse(req.url);
@@ -123,7 +103,15 @@ function serverFunc(req, res) {
 		
 	});
 	
-}
+});
+
+// Start the server
+server.listen(conf.port, conf.host, function() {
+	console.log('Server running at ' + conf.host + ':' + conf.port + ' (process id ' + process.pid + ')');
+});
+
+// ------------------------------------------------------------------
+//  Internals
 
 // Sends a response
 function respond(res, conf) {
